@@ -32,6 +32,7 @@
 #include <ros/ros.h>
 #include <sdf/sdf.hh>
 #include <std_srvs/Empty.h>
+#include "rotors_gazebo_plugins/sdf_api_wrapper.hpp"
 
 namespace gazebo {
 // Default values
@@ -49,8 +50,8 @@ class OctomapFromGazeboWorld : public WorldPlugin {
   /// \param[in] _parent Pointer to the world that loaded this plugin.
   /// \param[in] _sdf SDF element that describes the plugin.
   void Load(physics::WorldPtr _parent, sdf::ElementPtr _sdf);
-  bool CheckIfInsideObject(const std::string& name, const math::Vector3& central_point, gazebo::physics::RayShapePtr ray);
-  bool CheckIfInsideObjectInX(const std::string& name, const math::Vector3& central_point, gazebo::physics::RayShapePtr ray);
+  bool CheckIfInsideObject(const std::string& name, const ignition::math::Vector3d& central_point, gazebo::physics::RayShapePtr ray);
+  bool CheckIfInsideObjectInX(const std::string& name, const ignition::math::Vector3d& central_point, gazebo::physics::RayShapePtr ray);
   void CreateOctomap(const planning_msgs::Octomap::Request& msg);
 
  private:

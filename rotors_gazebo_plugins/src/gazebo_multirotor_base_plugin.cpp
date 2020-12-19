@@ -27,7 +27,7 @@
 namespace gazebo {
 
 GazeboMultirotorBasePlugin::~GazeboMultirotorBasePlugin() {
-  event::Events::DisconnectWorldUpdateBegin(update_connection_);
+  this->update_connection_.reset();
   if (node_handle_) {
     node_handle_->shutdown();
     delete node_handle_;
@@ -77,7 +77,7 @@ void GazeboMultirotorBasePlugin::Load(physics::ModelPtr _model, sdf::ElementPtr 
 // This gets called by the world update start event.
 void GazeboMultirotorBasePlugin::OnUpdate(const common::UpdateInfo& _info) {
   // Get the current simulation time.
-  common::Time now = world_->GetSimTime();
+  common::Time now = world_->SimTime();
   mav_msgs::MotorSpeedPtr msg(new mav_msgs::MotorSpeed);
   msg->motor_speed.resize(motor_joints_.size());
 

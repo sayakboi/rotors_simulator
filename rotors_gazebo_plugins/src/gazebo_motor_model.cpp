@@ -24,7 +24,7 @@
 namespace gazebo {
 
 GazeboMotorModel::~GazeboMotorModel() {
-  event::Events::DisconnectWorldUpdateBegin(updateConnection_);
+  this->updateConnection_.reset();
   if (node_handle_) {
     node_handle_->shutdown();
     delete node_handle_;
@@ -138,22 +138,22 @@ void GazeboMotorModel::UpdateForcesAndMoments() {
   double real_motor_velocity = motor_rot_vel_ * rotor_velocity_slowdown_sim_;
   double force = real_motor_velocity * real_motor_velocity * motor_constant_;
   // Apply a force to the link.
-  link_->AddRelativeForce(math::Vector3(0, 0, force));
+  link_->AddRelativeForce(ignition::math::Vector3d(0, 0, force));
 
   // Forces from Philppe Martin's and Erwan Salaün's
   // 2010 IEEE Conference on Robotics and Automation paper
   // The True Role of Accelerometer Feedback in Quadrotor Control
   // - \omega * \lambda_1 * V_A^{\perp}
-  math::Vector3 joint_axis = joint_->GetGlobalAxis(0);
-  math::Vector3 body_velocity = link_->GetWorldLinearVel();
-  math::Vector3 body_velocity_perpendicular = body_velocity - (body_velocity * joint_axis) * joint_axis;
-  math::Vector3 air_drag = -std::abs(real_motor_velocity) * rotor_drag_coefficient_ * body_velocity_perpendicular;
+  ignition::math::Vector3d joint_axis = joint_->GlobalAxis(0);
+  ignition::math::Vector3d body_velocity = link_->WorldLinearVel();
+  ignition::math::Vector3d body_velocity_perpendicular = body_velocity - (body_velocity * joint_axis) * joint_axis;
+  ignition::math::Vector3d air_drag = -std::abs(real_motor_velocity) * rotor_drag_coefficient_ * body_velocity_perpendicular;
   // Apply air_drag to link.
   link_->AddForce(air_drag);
   // Moments
-  link_->AddRelativeTorque(math::Vector3(0, 0, -turning_direction_ * force * moment_constant_));
+  link_->AddRelativeTorque(ignition::math::Vector3d(0, 0, -turning_direction_ * force * moment_constant_));
 
-  math::Vector3 rolling_moment;
+  ignition::math::Vector3d rolling_moment;
   // - \omega * \mu_1 * V_A^{\perp}
   rolling_moment = -std::abs(real_motor_velocity) * rolling_moment_coefficient_ * body_velocity_perpendicular;
   link_->AddRelativeTorque(rolling_moment);

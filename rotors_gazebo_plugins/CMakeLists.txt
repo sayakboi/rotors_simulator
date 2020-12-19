@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 2.8.3)
+cmake_minimum_required(VERSION 3.10.2)
 project(rotors_gazebo_plugins)
 
 set(MAVLINK_INTERFACE)
@@ -44,6 +44,7 @@ endif()
 find_package(Eigen REQUIRED)
 find_package(octomap REQUIRED)
 find_package(gazebo REQUIRED)
+ign_pkg_check_modules(UUID uuid)
 find_package(OpenCV REQUIRED)
 link_directories(${GAZEBO_LIBRARY_DIRS})
 include_directories(${GAZEBO_INCLUDE_DIRS})
@@ -99,4 +100,3 @@ if (BUILD_MAVLINK_INTERFACE)
   add_dependencies(rotors_gazebo_mavlink_interface ${catkin_EXPORTED_TARGETS} ${mavros_EXPORTED_TARGETS} ${mavros_msgs_EXPORTED_TARGETS})
   message(STATUS "Built mavlink_interface_plugin")
 endif()
-

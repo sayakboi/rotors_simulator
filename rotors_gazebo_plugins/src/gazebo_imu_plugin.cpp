@@ -38,7 +38,7 @@ GazeboImuPlugin::GazeboImuPlugin()
 }
 
 GazeboImuPlugin::~GazeboImuPlugin() {
-  event::Events::DisconnectWorldUpdateBegin(updateConnection_);
+  this->updateConnection_.reset();
   if (node_handle_) {
     node_handle_->shutdown();
     delete node_handle_;
@@ -99,7 +99,7 @@ void GazeboImuPlugin::Load(physics::ModelPtr _model, sdf::ElementPtr _sdf) {
                       imu_parameters_.accelerometer_turn_on_bias_sigma,
                       imu_parameters_.accelerometer_turn_on_bias_sigma);
 
-  last_time_ = world_->GetSimTime();
+  last_time_ = world_->SimTime();
 
   // Listen to the update event. This event is broadcast every
   // simulation iteration.
@@ -138,8 +138,8 @@ void GazeboImuPlugin::Load(physics::ModelPtr _model, sdf::ElementPtr _sdf) {
   // Orientation estimate covariance (no estimate provided).
   imu_message_.orientation_covariance[0] = -1.0;
 
-  gravity_W_ = world_->GetPhysicsEngine()->GetGravity();
-  imu_parameters_.gravity_magnitude = gravity_W_.GetLength();
+  gravity_W_ = world_->Gravity();
+  imu_parameters_.gravity_magnitude = gravity_W_.Length();
 
   standard_normal_distribution_ = std::normal_distribution<double>(0.0, 1.0);
 
@@ -215,30 +215,30 @@ void GazeboImuPlugin::addNoise(Eigen::Vector3d* linear_acceleration,
 
 // This gets called by the world update start event.
 void GazeboImuPlugin::OnUpdate(const common::UpdateInfo& _info) {
-  common::Time current_time  = world_->GetSimTime();
+  common::Time current_time  = world_->SimTime();
   double dt = (current_time - last_time_).Double();
   last_time_ = current_time;
   double t = current_time.Double();
 
-  math::Pose T_W_I = link_->GetWorldPose(); //TODO(burrimi): Check tf.
-  math::Quaternion C_W_I = T_W_I.rot;
+  ignition::math::Pose3d T_W_I = link_->WorldPose(); //TODO(burrimi): Check tf.
+  ignition::math::Quaterniond C_W_I = T_W_I.Rot();
 
-  math::Vector3 velocity_current_W = link_->GetWorldLinearVel();
+  ignition::math::Vector3d velocity_current_W = link_->WorldLinearVel();
 
   // link_->GetRelativeLinearAccel() does not work sometimes. Returns only 0.
   // TODO For an accurate simulation, this might have to be fixed. Consider the
   //      time delay introduced by this numerical derivative, for example.
-  math::Vector3 acceleration = (velocity_current_W - velocity_prev_W_) / dt;
-  math::Vector3 acceleration_I =
+  ignition::math::Vector3d acceleration = (velocity_current_W - velocity_prev_W_) / dt;
+  ignition::math::Vector3d acceleration_I =
       C_W_I.RotateVectorReverse(acceleration - gravity_W_);
-  math::Vector3 angular_vel_I = link_->GetRelativeAngularVel();
+  ignition::math::Vector3d angular_vel_I = link_->RelativeAngularVel();
 
-  Eigen::Vector3d linear_acceleration_I(acceleration_I.x,
-                                        acceleration_I.y,
-                                        acceleration_I.z);
-  Eigen::Vector3d angular_velocity_I(angular_vel_I.x,
-                                     angular_vel_I.y,
-                                     angular_vel_I.z);
+  Eigen::Vector3d linear_acceleration_I(acceleration_I.X(),
+                                        acceleration_I.Y(),
+                                        acceleration_I.Z());
+  Eigen::Vector3d angular_velocity_I(angular_vel_I.X(),
+                                     angular_vel_I.Y(),
+                                     angular_vel_I.Z());
 
   addNoise(&linear_acceleration_I, &angular_velocity_I, dt);
 
@@ -251,10 +251,10 @@ void GazeboImuPlugin::OnUpdate(const common::UpdateInfo& _info) {
   // imu_message_.orientation.x = 0;
   // imu_message_.orientation.y = 0;
   // imu_message_.orientation.z = 0;
-  imu_message_.orientation.w = C_W_I.w;
-  imu_message_.orientation.x = C_W_I.x;
-  imu_message_.orientation.y = C_W_I.y;
-  imu_message_.orientation.z = C_W_I.z;
+  imu_message_.orientation.w = C_W_I.W();
+  imu_message_.orientation.x = C_W_I.X();
+  imu_message_.orientation.y = C_W_I.Y();
+  imu_message_.orientation.z = C_W_I.Z();
 
   imu_message_.linear_acceleration.x = linear_acceleration_I[0];
   imu_message_.linear_acceleration.y = linear_acceleration_I[1];
